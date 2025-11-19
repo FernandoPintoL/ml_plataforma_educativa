@@ -1,0 +1,85 @@
+version: '3.8'
+
+# =====================================================
+# DOCKER COMPOSE PARA ML EDUCATIVA
+# =====================================================
+# Usa BASE DE DATOS EXISTENTE (no duplica PostgreSQL)
+# Solo levanta: ML API + Redis (opcional)
+# =====================================================
+
+services:
+  # =====================================================
+  # SERVICIO DE ML - PYTHON/FASTAPI
+  # =====================================================
+  ml-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ml-educativa-api
+    ports:
+      - "8001:8001"
+    environment:
+      # Base de datos: USA LA EXISTENTE (no crea nueva)
+      # Para desarrollo local: apunta a PostgreSQL en 127.0.0.1:5432
+      # Para Railway: database_url se proporciona automáticamente
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:1234@127.0.0.1:5432/educativa}
+
+      # Redis (OPCIONAL - solo si usas caché)
+      - REDIS_URL=${REDIS_URL:-redis://127.0.0.1:6379}
+
+      # API Config
+      - API_HOST=0.0.0.0
+      - API_PORT=8001
+      - API_RELOAD=False
+      - API_WORKERS=4
+      - DEBUG=False
+      - LOG_LEVEL=INFO
+
+      # Seguridad
+      - SECRET_KEY=${SECRET_KEY:-development-secret-key-change-in-prod}
+
+    volumes:
+      - ./trained_models:/app/trained_models
+      - ./logs:/app/logs
+    networks:
+      - educativa-network
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # =====================================================
+  # REDIS (Cache/Queue) - OPCIONAL
+  # =====================================================
+  # Comentar si no usas caché/queue
+  # Para usar: descomentar las siguientes líneas
+
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: educativa-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - educativa-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   command: redis-server --appendonly yes
+
+volumes:
+  # Volúmenes locales (no incluye postgres_data - usa BD existente)
+  # redis_data:  # Descomentar si usas Redis
+  #   driver: local
+
+networks:
+  educativa-network:
+    driver: bridge

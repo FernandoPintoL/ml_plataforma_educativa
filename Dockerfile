@@ -2,7 +2,7 @@
 # Stage 1: Builder
 # =====================================================
 
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Variables de entorno
 ENV PYTHONUNBUFFERED=1 \
@@ -31,7 +31,7 @@ FROM python:3.11-slim
 # Variables de entorno
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH=/root/.local/bin:$PATH
+    PATH=/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Instalar dependencias de runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -50,7 +50,7 @@ COPY . .
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8001/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Crear usuario no-root
 RUN useradd -m -u 1000 mluser && \
@@ -58,7 +58,10 @@ RUN useradd -m -u 1000 mluser && \
 USER mluser
 
 # Exponer puerto
-EXPOSE 8001
+EXPOSE 8000
 
 # Command
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001"]
+# En Railway, usa el puerto asignado automáticamente via variable PORT
+# Si no está disponible, usa 8000 como default
+# IMPORTANTE: El puerto debe estar disponible públicamente
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]

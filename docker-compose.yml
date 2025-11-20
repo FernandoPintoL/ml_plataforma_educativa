@@ -1,5 +1,3 @@
-version: '3.8'
-
 # =====================================================
 # DOCKER COMPOSE PARA ML EDUCATIVA
 # =====================================================
@@ -75,10 +73,7 @@ services:
   #     retries: 5
   #   command: redis-server --appendonly yes
 
-volumes:
-  # Volúmenes locales (no incluye postgres_data - usa BD existente)
-  # redis_data:  # Descomentar si usas Redis
-  #   driver: local
+volumes: {}
 
 networks:
   educativa-network:

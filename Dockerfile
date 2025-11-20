@@ -48,20 +48,20 @@ COPY --from=builder /root/.local /root/.local
 # Copiar código de la aplicación
 COPY . .
 
-# Health check
+# Health check (usa puerto dinámico)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:${PORT:-8001}/health || exit 1
 
 # Crear usuario no-root
 RUN useradd -m -u 1000 mluser && \
     chown -R mluser:mluser /app
 USER mluser
 
-# Exponer puerto
-EXPOSE 8001
+# Exponer puertos (8001 para local, 8080 para Railway)
+EXPOSE 8001 8080
 
 # Command
-# En Railway, usa el puerto asignado automáticamente via variable PORT
-# Si no está disponible, usa 8001 como default para desarrollo local
-# IMPORTANTE: El puerto debe estar disponible públicamente
+# En Railway: Usa variable PORT (asignada automáticamente como 8080)
+# En Docker Desktop: Usa 8001 como default
+# El puerto dinámico se respeta con ${PORT:-8001}
 CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8001} --workers 1"]

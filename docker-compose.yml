@@ -26,6 +26,8 @@ services:
       - REDIS_URL=${REDIS_URL:-redis://127.0.0.1:6379}
 
       # API Config
+      # PORT: Para local usa 8001, Railway la asigna automáticamente como 8080
+      - PORT=${PORT:-8001}
       - API_HOST=0.0.0.0
       - API_PORT=8001
       - API_RELOAD=False

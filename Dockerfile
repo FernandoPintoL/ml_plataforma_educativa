@@ -58,10 +58,10 @@ RUN useradd -m -u 1000 mluser && \
 USER mluser
 
 # Exponer puerto
-EXPOSE 8000
+EXPOSE 8001
 
 # Command
 # En Railway, usa el puerto asignado automáticamente via variable PORT
-# Si no está disponible, usa 8000 como default
+# Si no está disponible, usa 8001 como default para desarrollo local
 # IMPORTANTE: El puerto debe estar disponible públicamente
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8001} --workers 1"]

@@ -31,7 +31,7 @@ FROM python:3.11-slim
 # Variables de entorno
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH=/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    PATH=/home/mluser/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Instalar dependencias de runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -42,19 +42,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Crear directorio de trabajo
 WORKDIR /app
 
-# Copiar Python packages del builder
-COPY --from=builder /root/.local /root/.local
+# Crear usuario no-root PRIMERO (antes de copiar archivos)
+RUN useradd -m -u 1000 mluser
+
+# Copiar Python packages del builder y asignar permisos
+COPY --from=builder /root/.local /home/mluser/.local
+RUN chown -R mluser:mluser /home/mluser/.local
 
 # Copiar código de la aplicación
-COPY . .
+COPY --chown=mluser:mluser . .
 
 # Health check (usa puerto dinámico)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8001}/health || exit 1
 
-# Crear usuario no-root
-RUN useradd -m -u 1000 mluser && \
-    chown -R mluser:mluser /app
+# Cambiar a usuario no-root
 USER mluser
 
 # Exponer puertos (8001 para local, 8080 para Railway)
